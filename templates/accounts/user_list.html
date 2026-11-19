@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+
+{% block title %}Sales Team & User Management - LeadFlow CRM{% endblock %}
+{% block page_title %}Sales Team & Role-Based Permissions{% endblock %}
+{% block page_subtitle %}Admin Control &bull; Manage user accounts, salesperson permissions, and workloads{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <span class="badge bg-primary-subtle text-primary fw-semibold px-3 py-2">
+      <i class="bi bi-shield-lock-fill me-1"></i> Admin Role-Based Access Control
+    </span>
+  </div>
+  <a href="{% url 'user_create' %}" class="btn btn-primary btn-sm fw-semibold shadow-sm">
+    <i class="bi bi-person-plus-fill me-1"></i> Add Team Member
+  </a>
+</div>
+
+<div class="card border-0 shadow-sm rounded-3">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light small text-muted">
+          <tr>
+            <th>User</th>
+            <th>Role & Permissions</th>
+            <th>Designation</th>
+            <th>Assigned Leads</th>
+            <th>Active Follow-ups</th>
+            <th>Closed Won Deals</th>
+            <th>Conversion Rate</th>
+            <th>Status</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for stat in user_stats %}
+            <tr>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <div class="user-avatar-circle" style="background-color: {{ stat.user.profile.avatar_color|default:'#2563eb' }};">
+                    {{ stat.user.first_name|default:stat.user.username|slice:":1"|upper }}
+                  </div>
+                  <div>
+                    <div class="fw-bold text-dark">{{ stat.user.get_full_name|default:stat.user.username }}</div>
+                    <div class="text-muted small">@{{ stat.user.username }} &bull; {{ stat.user.email }}</div>
+                  </div>
+                </div>
+              </td>
+              <td>
+                {% if stat.user.profile.is_admin %}
+                  <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                    <i class="bi bi-shield-fill me-1"></i> Admin / Manager
+                  </span>
+                {% else %}
+                  <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                    <i class="bi bi-person-badge me-1"></i> Salesperson
+                  </span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="small fw-medium">{{ stat.user.profile.designation|default:"Sales Representative" }}</div>
+                <div class="text-muted small">{{ stat.user.profile.phone|default:"" }}</div>
+              </td>
+              <td>
+                <a href="{% url 'lead_list' %}?assigned_to={{ stat.user.id }}" class="fw-bold text-decoration-none">
+                  {{ stat.total_leads }} leads
+                </a>
+              </td>
+              <td>
+                <span class="badge bg-warning-subtle text-warning border">{{ stat.active_leads }} active</span>
+              </td>
+              <td>
+                <span class="badge bg-success-subtle text-success border">{{ stat.won_leads }} won</span>
+              </td>
+              <td>
+                <div class="small fw-semibold">{{ stat.conversion_rate }}%</div>
+                <div class="progress" style="height: 4px; width: 60px;">
+                  <div class="progress-bar bg-success" style="width: {{ stat.conversion_rate }}%"></div>
+                </div>
+              </td>
+              <td>
+                {% if stat.user.is_active %}
+                  <span class="badge bg-success rounded-pill">Active</span>
+                {% else %}
+                  <span class="badge bg-secondary rounded-pill">Disabled</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                <a href="{% url 'user_edit' stat.user.pk %}" class="btn btn-outline-secondary btn-sm" title="Edit Member & Role">
+                  <i class="bi bi-pencil me-1"></i> Edit
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

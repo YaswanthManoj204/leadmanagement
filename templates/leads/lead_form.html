@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - LeadFlow CRM{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block page_subtitle %}
+  {% if lead %}
+    Update details for {{ lead.client_name }} ({{ lead.business_name }})
+  {% else %}
+    Capture a new sales prospect into the centralized database (Initial Status: New Lead)
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-xl-10">
+    <div class="card border-0 shadow-sm rounded-3">
+      <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold">
+          <i class="bi bi-person-plus-fill text-primary me-2"></i>{{ title }}
+        </h6>
+        <a href="{% if lead %}{% url 'lead_detail' lead.pk %}{% else %}{% url 'lead_list' %}{% endif %}" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-arrow-left me-1"></i> Cancel
+        </a>
+      </div>
+
+      <div class="card-body p-4">
+        {% if form.errors %}
+          <div class="alert alert-danger" role="alert">
+            <h6 class="fw-bold mb-1"><i class="bi bi-exclamation-triangle-fill me-2"></i>Please fix the errors below:</h6>
+            <ul class="mb-0 small">
+              {% for field in form %}
+                {% for error in field.errors %}
+                  <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                {% endfor %}
+              {% endfor %}
+              {% for error in form.non_field_errors %}
+                <li>{{ error }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+
+        <form method="POST">
+          {% csrf_token %}
+
+          <!-- Section 1: Client & Company Information -->
+          <h6 class="text-primary fw-bold mb-3 border-bottom pb-2">
+            <i class="bi bi-building me-1"></i> 1. Client & Business Information
+          </h6>
+          <div class="row g-3 mb-4">
+            <div class="col-12 col-md-6">
+              <label class="form-label small fw-semibold">Client Name <span class="text-danger">*</span></label>
+              {{ form.client_name }}
+              <div class="form-text">Full name of the contact person or decision maker.</div>
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label small fw-semibold">Business Name <span class="text-danger">*</span></label>
+              {{ form.business_name }}
+              <div class="form-text">Company or enterprise name.</div>
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label small fw-semibold">Location <span class="text-danger">*</span></label>
+              {{ form.location }}
+              <div class="form-text">City, State or Area (e.g. Bangalore, Karnataka).</div>
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label small fw-semibold">Business Category <span class="text-danger">*</span></label>
+              {{ form.business_category }}
+            </div>
+          </div>
+
+          <!-- Section 2: Contact Details -->
+          <h6 class="text-primary fw-bold mb-3 border-bottom pb-2">
+            <i class="bi bi-telephone-inbound me-1"></i> 2. Contact Channels
+          </h6>
+          <div class="row g-3 mb-4">
+            <div class="col-12 col-md-4">
+              <label class="form-label small fw-semibold">Contact Number <span class="text-danger">*</span></label>
+              {{ form.contact_number }}
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label small fw-semibold">WhatsApp Number</label>
+              {{ form.whatsapp_number }}
+              <div class="form-text">Leave blank to use primary contact number.</div>
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label small fw-semibold">Email Address</label>
+              {{ form.email }}
+            </div>
+          </div>
+
+          <!-- Section 3: Lead Classification & Source -->
+          <h6 class="text-primary fw-bold mb-3 border-bottom pb-2">
+            <i class="bi bi-funnel me-1"></i> 3. Lead Source & Quality Assessment
+          </h6>
+          <div class="row g-3 mb-4">
+            <div class="col-12 col-md-4">
+              <label class="form-label small fw-semibold">Lead Source <span class="text-danger">*</span></label>
+              {{ form.lead_source }}
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label small fw-semibold">Campaign Name / UTM</label>
+              {{ form.campaign_name }}
+              <div class="form-text">Ad set, creative, or referral name.</div>
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label small fw-semibold">Lead Quality <span class="text-danger">*</span></label>
+              {{ form.lead_quality }}
+            </div>
+          </div>
+
+          <!-- Section 4: Assignment, Status & Follow-up Scheduling -->
+          <h6 class="text-primary fw-bold mb-3 border-bottom pb-2">
+            <i class="bi bi-calendar-event me-1"></i> 4. Sales Assignment & Follow-up Schedule
+          </h6>
+          <div class="row g-3 mb-4">
+            <div class="col-12 col-md-4">
+              <label class="form-label small fw-semibold">Current Lead Status <span class="text-danger">*</span></label>
+              {{ form.status }}
+              <div class="form-text">All new leads default to "New Lead".</div>
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label small fw-semibold">Salesperson Assigned</label>
+              {{ form.assigned_to }}
+            </div>
+            <div class="col-6 col-md-2">
+              <label class="form-label small fw-semibold">Next Follow-up Date</label>
+              {{ form.next_followup_date }}
+            </div>
+            <div class="col-6 col-md-2">
+              <label class="form-label small fw-semibold">Time</label>
+              {{ form.next_followup_time }}
+            </div>
+          </div>
+
+          <!-- Section 5: Initial Notes -->
+          <div class="mb-4">
+            <label class="form-label small fw-semibold">Initial Inquiries & Prospect Notes</label>
+            {{ form.initial_notes }}
+            <div class="form-text">Specific requirements, budget mentions, pain points or comments.</div>
+          </div>
+
+          <!-- Form Buttons -->
+          <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+            <a href="{% if lead %}{% url 'lead_detail' lead.pk %}{% else %}{% url 'lead_list' %}{% endif %}" class="btn btn-light border px-4">
+              Cancel
+            </a>
+            <button type="submit" class="btn btn-primary px-4 fw-semibold shadow-sm">
+              <i class="bi bi-check2-circle me-1"></i> {{ button_text }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

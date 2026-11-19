@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block title %}Pipeline Kanban Board - LeadFlow CRM{% endblock %}
+{% block page_title %}Interactive Sales Pipeline Board{% endblock %}
+{% block page_subtitle %}Visual lead workflow from capture to deal closure. Drag cards to update stage.{% endblock %}
+
+{% block content %}
+<!-- Board Top Controls -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <div class="d-flex align-items-center gap-2">
+    <a href="{% url 'lead_list' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-table me-1"></i> Table View
+    </a>
+    <span class="text-muted small">| Tip: Drag & drop lead cards between columns to update their sales stage live!</span>
+  </div>
+
+  <div class="d-flex align-items-center gap-2">
+    {% if user.is_superuser or user.profile.is_admin %}
+      <form method="GET" class="d-flex align-items-center gap-1">
+        <select name="assigned_to" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">All Team Members</option>
+          {% for sp in salespeople %}
+            <option value="{{ sp.id }}" {% if selected_assigned == sp.id|stringformat:"s" %}selected{% endif %}>
+              {{ sp.get_full_name|default:sp.username }}
+            </option>
+          {% endfor %}
+        </select>
+      </form>
+    {% endif %}
+
+    <a href="{% url 'lead_create' %}" class="btn btn-primary btn-sm fw-semibold">
+      <i class="bi bi-plus-lg me-1"></i> Capture Lead
+    </a>
+  </div>
+</div>
+
+<!-- Horizontal Scrolling Kanban Board -->
+<div class="kanban-board">
+  {% for col in columns %}
+    <div class="kanban-column border-top {{ col.stage.color }} border-3">
+      <!-- Column Header -->
+      <div class="kanban-column-header">
+        <div class="d-flex align-items-center gap-2">
+          <span>{{ col.stage.name }}</span>
+          <span class="badge {{ col.stage.badge }} rounded-pill" style="font-size: 0.75rem;">{{ col.count }}</span>
+        </div>
+      </div>
+
+      <!-- Card Drop Container -->
+      <div class="kanban-cards-wrapper" data-stage-id="{{ col.stage.id }}">
+        {% for lead in col.leads %}
+          <div class="kanban-card" draggable="true" data-lead-id="{{ lead.id }}">
+            <div class="d-flex justify-content-between align-items-start mb-1">
+              <span class="badge {{ lead.quality_badge_class }} rounded-pill" style="font-size: 0.68rem;">
+                {{ lead.lead_quality }}
+              </span>
+              <span class="badge bg-light text-muted border" style="font-size: 0.65rem;">
+                {{ lead.lead_source|truncatechars:18 }}
+              </span>
+            </div>
+
+            <h6 class="fw-bold mb-1">
+              <a href="{% url 'lead_detail' lead.pk %}" class="text-dark text-decoration-none">
+                {{ lead.client_name }}
+              </a>
+            </h6>
+            <div class="text-muted small mb-2 text-truncate">
+              <i class="bi bi-building me-1"></i>{{ lead.business_name }}
+            </div>
+
+            {% if lead.deal_value %}
+              <div class="text-success fw-bold small mb-2">
+                <i class="bi bi-currency-rupee"></i>{{ lead.deal_value|floatformat:0 }}
+              </div>
+            {% endif %}
+
+            <!-- Next Follow-up alert -->
+            {% if lead.next_followup_date %}
+              <div class="mb-2" style="font-size: 0.75rem;">
+                {% if lead.is_overdue %}
+                  <span class="text-danger fw-semibold"><i class="bi bi-clock-history me-1"></i>Overdue: {{ lead.next_followup_date|date:"d M" }}</span>
+                {% elif lead.is_due_today %}
+                  <span class="text-warning-emphasis fw-bold"><i class="bi bi-sun-fill me-1"></i>Due Today</span>
+                {% else %}
+                  <span class="text-muted"><i class="bi bi-calendar3 me-1"></i>{{ lead.next_followup_date|date:"d M" }}</span>
+                {% endif %}
+              </div>
+            {% endif %}
+
+            <div class="d-flex justify-content-between align-items-center pt-2 border-top border-light-subtle">
+              <!-- Assigned avatar -->
+              {% if lead.assigned_to %}
+                <div class="d-flex align-items-center gap-1" title="Assigned to {{ lead.assigned_to.get_full_name|default:lead.assigned_to.username }}">
+                  <div class="user-avatar-circle" style="width: 22px; height: 22px; font-size: 0.65rem; background-color: {{ lead.assigned_to.profile.avatar_color|default:'#2563eb' }};">
+                    {{ lead.assigned_to.first_name|default:lead.assigned_to.username|slice:":1"|upper }}
+                  </div>
+                  <span class="text-muted text-truncate" style="font-size: 0.72rem; max-width: 90px;">
+                    {{ lead.assigned_to.first_name|default:lead.assigned_to.username }}
+                  </span>
+                </div>
+              {% else %}
+                <span class="text-muted" style="font-size: 0.72rem;">Unassigned</span>
+              {% endif %}
+
+              <!-- Quick Action Icon -->
+              <div class="btn-group btn-group-sm">
+                {% if lead.whatsapp_number %}
+                  <a href="https://wa.me/{{ lead.whatsapp_number|cut:' '|cut:'+' }}" target="_blank" class="btn btn-light btn-sm text-success p-1" title="WhatsApp">
+                    <i class="bi bi-whatsapp"></i>
+                  </a>
+                {% endif %}
+                <a href="{% url 'lead_detail' lead.pk %}" class="btn btn-light btn-sm text-primary p-1" title="View details">
+                  <i class="bi bi-arrow-right-short fs-6"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        {% empty %}
+          <div class="text-center py-4 text-muted small fst-italic">
+            No leads in this stage
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}
+

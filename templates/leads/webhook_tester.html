@@ -1,0 +1,285 @@
+{% extends 'base.html' %}
+
+{% block title %}Automated Lead Capture & Webhook Integrations - LeadFlow CRM{% endblock %}
+{% block page_title %}Automated Lead Capture Integrations{% endblock %}
+{% block page_subtitle %}Connect Google Ads, Social Media Paid Campaigns & Webhooks to auto-record leads{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <!-- Left Column: Live Lead Ingestion Simulator & Quick Test -->
+  <div class="col-12 col-lg-7">
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+      <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+        <div>
+          <h6 class="mb-0 fw-bold"><i class="bi bi-lightning-charge-fill text-warning me-2"></i>Live Lead Capture Simulator</h6>
+          <small class="text-muted">Test automatic lead ingestion from Google Ads and Social Media campaigns</small>
+        </div>
+        <span class="badge bg-success-subtle text-success border">Endpoint Live</span>
+      </div>
+      <div class="card-body p-4">
+        <p class="text-secondary small">
+          Requirement 1: <em>"My sales team should be able to capture leads from Social Media Paid Campaigns and Google Ads. All newly captured leads should be automatically recorded in a centralized database and initially assigned the status <strong>New Lead</strong>."</em>
+        </p>
+
+        <!-- Quick 1-Click Simulation Buttons -->
+        <div class="d-flex flex-wrap gap-2 mb-4">
+          <button type="button" class="btn btn-outline-danger btn-sm fw-semibold" id="btnSimulateGoogle">
+            <i class="bi bi-google me-1"></i> Simulate Google Ads Lead
+          </button>
+          <button type="button" class="btn btn-outline-primary btn-sm fw-semibold" id="btnSimulateMeta">
+            <i class="bi bi-meta me-1"></i> Simulate Social Media Campaign (Meta/FB)
+          </button>
+        </div>
+
+        <!-- Custom Test Form -->
+        <form id="simulatorForm" class="bg-light p-3 rounded-3 border mb-3">
+          <h6 class="fw-bold small text-dark mb-2">Or Send Custom Ingestion Payload:</h6>
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Client Name</label>
+              <input type="text" id="sim_client_name" class="form-control form-control-sm" value="Aditya Malhotra" required>
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Contact Number</label>
+              <input type="text" id="sim_phone" class="form-control form-control-sm" value="+91 98111 22334" required>
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Business Name</label>
+              <input type="text" id="sim_business" class="form-control form-control-sm" value="Malhotra Logistics & Supply Chain">
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Location</label>
+              <input type="text" id="sim_location" class="form-control form-control-sm" value="Gurgaon, Haryana">
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Lead Source</label>
+              <select id="sim_source" class="form-select form-select-sm">
+                <option value="Google Ads">Google Ads</option>
+                <option value="Social Media Paid Campaigns">Social Media Paid Campaigns</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Campaign Name</label>
+              <input type="text" id="sim_campaign" class="form-control form-control-sm" value="Google Search B2B High Intent #2026">
+            </div>
+          </div>
+          <button type="button" class="btn btn-primary btn-sm fw-semibold" id="btnSubmitSimulator">
+            <i class="bi bi-send-fill me-1"></i> Send Webhook Request to Central DB
+          </button>
+        </form>
+
+        <!-- Live Response Output -->
+        <div id="responseContainer" class="d-none">
+          <label class="form-label small fw-semibold text-dark">Live API Response:</label>
+          <pre id="responseJson" class="bg-dark text-success p-3 rounded-3 small mb-0" style="max-height: 180px; overflow-y: auto;"></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recently Captured Automated Leads Table -->
+    <div class="card border-0 shadow-sm rounded-3">
+      <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+        <div>
+          <h6 class="mb-0 fw-bold"><i class="bi bi-database-check text-success me-2"></i>Recently Ingested Campaign Leads</h6>
+          <small class="text-muted">Recorded via centralized webhook endpoint</small>
+        </div>
+        <a href="{% url 'lead_list' %}?source=Google+Ads" class="btn btn-sm btn-light border">Filter Ads</a>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0 small">
+            <thead class="table-light text-muted">
+              <tr>
+                <th>Client / Business</th>
+                <th>Source & Campaign</th>
+                <th>Status</th>
+                <th>Captured At</th>
+                <th class="text-end">Action</th>
+              </tr>
+            </thead>
+            <tbody id="recentTableBody">
+              {% for lead in recent_captured %}
+                <tr>
+                  <td>
+                    <div class="fw-bold text-dark">{{ lead.client_name }}</div>
+                    <div class="text-muted">{{ lead.business_name }} &bull; {{ lead.contact_number }}</div>
+                  </td>
+                  <td>
+                    <span class="badge bg-secondary-subtle text-secondary">{{ lead.lead_source }}</span>
+                    {% if lead.campaign_name %}
+                      <div class="text-primary" style="font-size: 0.72rem;">{{ lead.campaign_name }}</div>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <span class="badge {{ lead.status_badge_class }}">{{ lead.status }}</span>
+                  </td>
+                  <td class="text-muted">{{ lead.created_at|date:"d M, H:i" }}</td>
+                  <td class="text-end">
+                    <a href="{% url 'lead_detail' lead.pk %}" class="btn btn-outline-primary btn-sm py-0 px-2">View</a>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="5" class="text-center py-4 text-muted">No campaign leads recorded yet. Try the simulation button above!</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: API Documentation & Webhook Setup -->
+  <div class="col-12 col-lg-5">
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+      <div class="card-header bg-white border-bottom py-3">
+        <h6 class="mb-0 fw-bold"><i class="bi bi-code-slash text-primary me-2"></i>API Endpoint & Webhook Documentation</h6>
+      </div>
+      <div class="card-body p-4 small">
+        <div class="mb-3">
+          <label class="form-label text-muted fw-semibold">Endpoint URL</label>
+          <div class="input-group">
+            <input type="text" class="form-control form-control-sm font-monospace bg-light" value="{{ webhook_url }}" readonly id="endpointUrl">
+            <button class="btn btn-outline-secondary btn-sm btn-copy" type="button" data-copy="{{ webhook_url }}">
+              <i class="bi bi-clipboard"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label text-muted fw-semibold">API Key (Header: X-API-KEY)</label>
+          <div class="input-group">
+            <input type="text" class="form-control form-control-sm font-monospace bg-light" value="{{ api_key }}" readonly id="apiKeyText">
+            <button class="btn btn-outline-secondary btn-sm btn-copy" type="button" data-copy="{{ api_key }}">
+              <i class="bi bi-clipboard"></i>
+            </button>
+          </div>
+          <div class="form-text">Pass header <code>X-API-KEY: {{ api_key }}</code> or query param <code>?api_key={{ api_key }}</code>.</div>
+        </div>
+
+        <h6 class="fw-bold text-dark mt-4 mb-2">cURL Example (Google Ads & Social Media Webhook)</h6>
+        <div class="position-relative">
+          <pre class="bg-dark text-light p-3 rounded-3 font-monospace mb-0" style="font-size: 0.76rem; overflow-x: auto;">curl -X POST "{{ webhook_url }}" \
+  -H "Content-Type: application/json" \
+  -H "X-API-KEY: {{ api_key }}" \
+  -d '{
+    "client_name": "Rohan Verma",
+    "business_name": "Verma Cloud Technologies",
+    "contact_number": "+91 99887 76655",
+    "whatsapp_number": "+91 99887 76655",
+    "email": "rohan@vermacloud.io",
+    "location": "Bengaluru, Karnataka",
+    "business_category": "Information Technology & Software",
+    "lead_source": "Google Ads",
+    "campaign_name": "Google Ads Q4 Enterprise",
+    "notes": "Looking for lead management software for 15 sales reps."
+  }'</pre>
+        </div>
+
+        <div class="mt-4 p-3 bg-light rounded-3 border">
+          <h6 class="fw-bold mb-1 text-dark"><i class="bi bi-shield-check text-success me-1"></i>Automated Rules Enforced:</h6>
+          <ul class="mb-0 ps-3 text-muted" style="font-size: 0.8rem;">
+            <li>Status is automatically set to <strong>New Lead</strong>.</li>
+            <li>All payload details are stored centrally in the SQLite/PostgreSQL database.</li>
+            <li>Audit log records timestamp, campaign name, and ingestion channel.</li>
+            <li>Sales team receives immediate notification on the dashboard.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const webhookUrl = "{{ webhook_url }}";
+  const apiKey = "{{ api_key }}";
+
+  function sendWebhook(payload) {
+    const resBox = document.getElementById('responseContainer');
+    const resJson = document.getElementById('responseJson');
+    resBox.classList.remove('d-none');
+    resJson.textContent = 'Sending request to centralized database...';
+
+    fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-KEY': apiKey
+      },
+      body: JSON.stringify(payload)
+    })
+    .then(res => res.json().then(data => ({ status: res.status, body: data })))
+    .then(result => {
+      resJson.textContent = JSON.stringify(result.body, null, 2);
+      if (result.status === 201) {
+        showToast('Success!', result.body.message, 'success');
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      } else {
+        showToast('Error', result.body.message || 'Request failed', 'danger');
+      }
+    })
+    .catch(err => {
+      resJson.textContent = 'Error: ' + err.message;
+      showToast('Error', err.message, 'danger');
+    });
+  }
+
+  // Google Ads Simulation Button
+  document.getElementById('btnSimulateGoogle').addEventListener('click', function () {
+    const randomId = Math.floor(1000 + Math.random() * 9000);
+    sendWebhook({
+      client_name: `Vikrant Kapoor #${randomId}`,
+      business_name: `Kapoor Healthcare Systems Pvt Ltd`,
+      contact_number: `+91 98${Math.floor(10000000 + Math.random() * 90000000)}`,
+      whatsapp_number: `+91 98${Math.floor(10000000 + Math.random() * 90000000)}`,
+      email: `vikrant.${randomId}@kapoorhealthcare.com`,
+      location: 'Mumbai, Maharashtra',
+      business_category: 'Healthcare & Pharmaceuticals',
+      lead_source: 'Google Ads',
+      campaign_name: 'Google Ads Search - Healthcare Solutions 2026',
+      lead_quality: 'Hot',
+      notes: 'Submitted Google Lead Form requesting quotation for 25 licenses.'
+    });
+  });
+
+  // Meta Social Media Simulation Button
+  document.getElementById('btnSimulateMeta').addEventListener('click', function () {
+    const randomId = Math.floor(1000 + Math.random() * 9000);
+    sendWebhook({
+      client_name: `Sneha Reddy #${randomId}`,
+      business_name: `Reddy Real Estate & Infra`,
+      contact_number: `+91 97${Math.floor(10000000 + Math.random() * 90000000)}`,
+      whatsapp_number: `+91 97${Math.floor(10000000 + Math.random() * 90000000)}`,
+      email: `sneha.${randomId}@reddyinfra.co`,
+      location: 'Hyderabad, Telangana',
+      business_category: 'Real Estate & Construction',
+      lead_source: 'Social Media Paid Campaigns',
+      campaign_name: 'Meta Instagram Story Ad - Real Estate Lead Gen',
+      lead_quality: 'Warm',
+      notes: 'Captured via Instagram Lead Gen Form. Interested in CRM integration.'
+    });
+  });
+
+  // Custom Form Submission
+  document.getElementById('btnSubmitSimulator').addEventListener('click', function () {
+    sendWebhook({
+      client_name: document.getElementById('sim_client_name').value,
+      contact_number: document.getElementById('sim_phone').value,
+      business_name: document.getElementById('sim_business').value,
+      location: document.getElementById('sim_location').value,
+      lead_source: document.getElementById('sim_source').value,
+      campaign_name: document.getElementById('sim_campaign').value,
+      lead_quality: 'Warm',
+      notes: 'Submitted via Webhook Simulation Console.'
+    });
+  });
+});
+</script>
+{% endblock %}
+

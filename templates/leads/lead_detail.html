@@ -1,0 +1,473 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ lead.client_name }} - {{ lead.business_name }} | LeadFlow CRM{% endblock %}
+{% block page_title %}{{ lead.client_name }}{% endblock %}
+{% block page_subtitle %}{{ lead.business_name }} &bull; {{ lead.business_category }}{% endblock %}
+
+{% block content %}
+<!-- Top Lead Header & Quick Action Buttons -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+  <div class="card-body p-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+      <!-- Client & Company Info Header -->
+      <div class="d-flex align-items-center gap-3">
+        <div class="bg-primary-subtle text-primary rounded-3 p-3 d-flex align-items-center justify-content-center" style="width: 56px; height: 56px;">
+          <i class="bi bi-building fs-3"></i>
+        </div>
+        <div>
+          <div class="d-flex align-items-center gap-2 mb-1">
+            <h4 class="fw-bold mb-0 text-dark">{{ lead.client_name }}</h4>
+            <span class="badge {{ lead.status_badge_class }} rounded-pill px-3 py-1">{{ lead.status }}</span>
+            <span class="badge {{ lead.quality_badge_class }} rounded-pill px-3 py-1">{{ lead.lead_quality }} Quality</span>
+          </div>
+          <div class="text-muted small d-flex flex-wrap align-items-center gap-3">
+            <span><i class="bi bi-briefcase me-1"></i>{{ lead.business_name }}</span>
+            <span><i class="bi bi-geo-alt me-1"></i>{{ lead.location }}</span>
+            <span><i class="bi bi-broadcast me-1"></i>{{ lead.lead_source }}</span>
+            <span><i class="bi bi-clock me-1"></i>Captured {{ lead.created_at|date:"M d, Y" }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <!-- Direct Communication Buttons -->
+        {% if lead.whatsapp_number %}
+          <a href="https://wa.me/{{ lead.whatsapp_number|cut:' '|cut:'+' }}" target="_blank" class="btn btn-success btn-sm fw-semibold shadow-sm">
+            <i class="bi bi-whatsapp me-1"></i> WhatsApp
+          </a>
+        {% endif %}
+        <a href="tel:{{ lead.contact_number }}" class="btn btn-outline-primary btn-sm fw-semibold">
+          <i class="bi bi-telephone-fill me-1"></i> Call
+        </a>
+        {% if lead.email %}
+          <a href="mailto:{{ lead.email }}" class="btn btn-outline-secondary btn-sm fw-semibold">
+            <i class="bi bi-envelope me-1"></i> Email
+          </a>
+        {% endif %}
+
+        <!-- Log Follow-up Button -->
+        <button type="button" class="btn btn-primary btn-sm fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#followupModal">
+          <i class="bi bi-chat-left-dots-fill me-1"></i> Log Follow-up
+        </button>
+
+        <!-- Close Deal Button -->
+        {% if lead.status != 'Closed Won' %}
+          <button type="button" class="btn btn-warning text-dark btn-sm fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#closeDealModal">
+            <i class="bi bi-trophy-fill me-1"></i> Close Deal (Won)
+          </button>
+        {% endif %}
+
+        <!-- Edit & Menu -->
+        <a href="{% url 'lead_edit' lead.pk %}" class="btn btn-outline-secondary btn-sm" title="Edit Lead Information">
+          <i class="bi bi-pencil me-1"></i> Edit
+        </a>
+
+        {% if is_admin %}
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#reassignModal" title="Reassign Lead">
+            <i class="bi bi-arrow-left-right me-1"></i> Reassign
+          </button>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Main 2-Column Detail View -->
+<div class="row g-4">
+  <!-- Left Column: Lead Information & Deal Details -->
+  <div class="col-12 col-lg-5">
+    <!-- 1. Lead Information Card -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+      <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold"><i class="bi bi-info-circle-fill text-primary me-2"></i>Lead & Business Details</h6>
+        <span class="badge bg-light text-dark border">ID #{{ lead.id }}</span>
+      </div>
+      <div class="card-body p-3">
+        <div class="list-group list-group-flush small">
+          <div class="list-group-item d-flex justify-content-between px-0 py-2">
+            <span class="text-muted">Client Name</span>
+            <span class="fw-semibold text-dark">{{ lead.client_name }}</span>
+          </div>
+          <div class="list-group-item d-flex justify-content-between px-0 py-2">
+            <span class="text-muted">Business Name</span>
+            <span class="fw-semibold text-dark">{{ lead.business_name }}</span>
+          </div>
+          <div class="list-group-item d-flex justify-content-between px-0 py-2">
+            <span class="text-muted">Business Category</span>
+            <span class="fw-semibold text-dark">{{ lead.business_category }}</span>
+          </div>
+          <div class="list-group-item d-flex justify-content-between px-0 py-2">
+            <span class="text-muted">Location</span>
+            <span class="fw-semibold text-dark">{{ lead.location }}</span>
+          </div>
+          <div class="list-group-item d-flex justify-content-between px-0 py-2">
+            <span class="text-muted">Contact Number</span>
+            <span class="fw-semibold text-dark">{{ lead.contact_number }}</span>
+          </div>
+          <div class="list-group-item d-flex justify-content-between px-0 py-2">
+            <span class="text-muted">WhatsApp Number</span>
+            <span class="fw-semibold text-dark">{{ lead.whatsapp_number|default:"Not specified" }}</span>
+          </div>
+          <div class="list-group-item d-flex justify-content-between px-0 py-2">
+            <span class="text-muted">Email Address</span>
+            <span class="fw-semibold text-dark">{{ lead.email|default:"Not specified" }}</span>
+          </div>
+          <div class="list-group-item d-flex justify-content-between px-0 py-2">
+            <span class="text-muted">Lead Source</span>
+            <span class="badge bg-secondary-subtle text-secondary">{{ lead.lead_source }}</span>
+          </div>
+          {% if lead.campaign_name %}
+            <div class="list-group-item d-flex justify-content-between px-0 py-2">
+              <span class="text-muted">Ad Campaign / UTM</span>
+              <span class="fw-semibold text-primary">{{ lead.campaign_name }}</span>
+            </div>
+          {% endif %}
+          <div class="list-group-item d-flex justify-content-between px-0 py-2">
+            <span class="text-muted">Salesperson Assigned</span>
+            <div>
+              {% if lead.assigned_to %}
+                <span class="fw-bold text-dark">{{ lead.assigned_to.get_full_name|default:lead.assigned_to.username }}</span>
+                <small class="text-muted d-block">({{ lead.assigned_to.profile.get_role_display }})</small>
+              {% else %}
+                <span class="badge bg-warning-subtle text-warning">Unassigned (Lead Pool)</span>
+              {% endif %}
+            </div>
+          </div>
+          <div class="list-group-item d-flex justify-content-between px-0 py-2">
+            <span class="text-muted">Next Follow-up Date</span>
+            <div>
+              {% if lead.next_followup_date %}
+                {% if lead.is_overdue %}
+                  <span class="badge bg-danger"><i class="bi bi-clock-history me-1"></i>Overdue: {{ lead.next_followup_date|date:"d M, Y" }}</span>
+                {% elif lead.is_due_today %}
+                  <span class="badge bg-warning text-dark"><i class="bi bi-sun-fill me-1"></i>Today {% if lead.next_followup_time %}{{ lead.next_followup_time|time:"H:i" }}{% endif %}</span>
+                {% else %}
+                  <span class="fw-semibold text-dark">{{ lead.next_followup_date|date:"d M, Y" }} {% if lead.next_followup_time %}at {{ lead.next_followup_time|time:"H:i" }}{% endif %}</span>
+                {% endif %}
+              {% else %}
+                <span class="text-muted">None scheduled</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        {% if lead.initial_notes %}
+          <div class="mt-3 p-3 bg-light rounded-3 border">
+            <div class="text-muted small fw-semibold mb-1">Initial Ingestion / Inquiry Notes:</div>
+            <p class="mb-0 small text-dark">{{ lead.initial_notes }}</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- 2. Closed Deal Business Details (Requirement 2 & 3: Complete business details when a deal is closed) -->
+    {% if lead.status == 'Closed Won' or lead.deal_value %}
+      <div class="card border-success shadow-sm rounded-3 mb-4">
+        <div class="card-header bg-success text-white py-3 d-flex justify-content-between align-items-center">
+          <h6 class="mb-0 fw-bold"><i class="bi bi-award-fill me-2"></i>Closed Deal Business Information</h6>
+          <span class="badge bg-white text-success fw-bold">Deal Won</span>
+        </div>
+        <div class="card-body p-3">
+          <div class="mb-3 p-3 bg-success-subtle rounded-3 text-center border border-success-subtle">
+            <div class="text-muted small text-uppercase fw-semibold">Total Closed Deal Value</div>
+            <h3 class="fw-bold text-success mb-0">₹{{ lead.deal_value|floatformat:2 }}</h3>
+            <small class="text-muted">Closed Date: {{ lead.closed_date|date:"d M, Y" }}</small>
+          </div>
+
+          <div class="list-group list-group-flush small">
+            <div class="list-group-item px-0 py-2">
+              <span class="text-muted d-block mb-1">Products / Services Sold:</span>
+              <strong class="text-dark">{{ lead.products_services_sold|default:"Custom Service Agreement" }}</strong>
+            </div>
+            <div class="list-group-item d-flex justify-content-between px-0 py-2">
+              <span class="text-muted">Contract Duration:</span>
+              <strong class="text-dark">{{ lead.contract_period|default:"Standard" }}</strong>
+            </div>
+            <div class="list-group-item d-flex justify-content-between px-0 py-2">
+              <span class="text-muted">Payment Terms:</span>
+              <strong class="text-dark">{{ lead.payment_terms|default:"As agreed" }}</strong>
+            </div>
+            <div class="list-group-item d-flex justify-content-between px-0 py-2">
+              <span class="text-muted">Tax ID / GST / VAT:</span>
+              <strong class="text-dark">{{ lead.tax_id|default:"Pending" }}</strong>
+            </div>
+            {% if lead.billing_address %}
+              <div class="list-group-item px-0 py-2">
+                <span class="text-muted d-block mb-1">Registered Billing Address:</span>
+                <span class="text-dark">{{ lead.billing_address }}</span>
+              </div>
+            {% endif %}
+            {% if lead.closure_notes %}
+              <div class="list-group-item px-0 py-2">
+                <span class="text-muted d-block mb-1">Closure Remarks & Handover:</span>
+                <p class="mb-0 text-dark">{{ lead.closure_notes }}</p>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Right Column: Follow-up History (Requirement 2 & 3) & Activity Log -->
+  <div class="col-12 col-lg-7">
+    <!-- Follow-up History Timeline Card -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+      <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+        <div>
+          <h6 class="mb-0 fw-bold"><i class="bi bi-clock-history text-primary me-2"></i>Follow-up History & Remarks</h6>
+          <small class="text-muted">Full record of conversations, meetings, and updates</small>
+        </div>
+        <button type="button" class="btn btn-primary btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#followupModal">
+          <i class="bi bi-plus-lg me-1"></i> Log Follow-up
+        </button>
+      </div>
+      <div class="card-body p-4">
+        {% if followups %}
+          <div class="timeline">
+            {% for item in followups %}
+              <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content shadow-sm">
+                  <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                      <span class="badge bg-primary-subtle text-primary fw-semibold me-1">
+                        <i class="bi bi-chat-quote-fill me-1"></i>{{ item.interaction_type }}
+                      </span>
+                      <span class="text-muted small">&bull; {{ item.interaction_date|date:"d M, Y h:i A" }}</span>
+                    </div>
+                    <div class="small fw-semibold text-secondary">
+                      By {{ item.salesperson.get_full_name|default:item.salesperson.username|default:'Sales Team' }}
+                    </div>
+                  </div>
+
+                  <p class="text-dark mb-2" style="font-size: 0.92rem; white-space: pre-line;">{{ item.remarks }}</p>
+
+                  <div class="d-flex flex-wrap gap-2 pt-2 border-top border-light-subtle small">
+                    <span class="text-muted">Updated Status: <span class="badge {{ item.lead.status_badge_class }}">{{ item.status_after_followup }}</span></span>
+                    <span class="text-muted">&bull; Quality: <span class="badge {{ item.lead.quality_badge_class }}">{{ item.quality_after_followup }}</span></span>
+                    {% if item.next_followup_date %}
+                      <span class="text-muted">&bull; Next Follow-up: <strong class="text-primary">{{ item.next_followup_date|date:"d M, Y" }}</strong></span>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="text-center py-5">
+            <i class="bi bi-chat-square-dots text-muted fs-1"></i>
+            <h6 class="mt-2 text-dark fw-bold">No follow-ups recorded yet</h6>
+            <p class="text-muted small">Record your calls, WhatsApp discussions, meetings, and client remarks.</p>
+            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#followupModal">
+              <i class="bi bi-plus-lg me-1"></i> Record First Follow-up
+            </button>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Audit Activity Log -->
+    <div class="card border-0 shadow-sm rounded-3">
+      <div class="card-header bg-white border-bottom py-3">
+        <h6 class="mb-0 fw-bold"><i class="bi bi-list-check text-secondary me-2"></i>System Activity & Audit Trail</h6>
+      </div>
+      <div class="card-body p-0">
+        <div class="list-group list-group-flush small">
+          {% for act in activities %}
+            <div class="list-group-item d-flex justify-content-between align-items-start py-2 px-3">
+              <div>
+                <div class="fw-semibold text-dark">{{ act.action }}</div>
+                {% if act.details %}
+                  <div class="text-muted">{{ act.details }}</div>
+                {% endif %}
+              </div>
+              <div class="text-end text-muted text-nowrap ms-2" style="font-size: 0.75rem;">
+                {{ act.timestamp|date:"d M, H:i" }}
+                {% if act.user %}
+                  <div class="fw-medium text-secondary">{{ act.user.username }}</div>
+                {% endif %}
+              </div>
+            </div>
+          {% empty %}
+            <div class="p-3 text-muted text-center">No system events logged.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL 1: LOG FOLLOW-UP (Requirement 2) -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="followupModal" tabindex="-1" aria-labelledby="followupModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title fw-bold" id="followupModalLabel">
+          <i class="bi bi-chat-left-dots-fill me-2"></i>Log Follow-up & Update Lead
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" action="{% url 'log_followup' lead.pk %}">
+        {% csrf_token %}
+        <div class="modal-body p-4">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Interaction Type</label>
+            {{ followup_form.interaction_type }}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Discussion Remarks & Client Feedback <span class="text-danger">*</span></label>
+            {{ followup_form.remarks }}
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Update Lead Status</label>
+              {{ followup_form.status_after_followup }}
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Update Lead Quality</label>
+              {{ followup_form.quality_after_followup }}
+            </div>
+          </div>
+
+          <div class="row g-2">
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Next Follow-up Date</label>
+              {{ followup_form.next_followup_date }}
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Next Follow-up Time</label>
+              {{ followup_form.next_followup_time }}
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm fw-semibold">
+            <i class="bi bi-save me-1"></i> Save Follow-up & Update
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL 2: CLOSE DEAL / DEAL WON (Requirement 2 & 3: Update Complete Business Details) -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="closeDealModal" tabindex="-1" aria-labelledby="closeDealModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title fw-bold" id="closeDealModalLabel">
+          <i class="bi bi-trophy-fill me-2"></i>Close Deal (Won) & Record Business Details
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" action="{% url 'close_deal' lead.pk %}">
+        {% csrf_token %}
+        <div class="modal-body p-4">
+          <div class="alert alert-success d-flex align-items-center gap-2 mb-3 py-2">
+            <i class="bi bi-stars fs-4"></i>
+            <div>
+              <strong>Closing Deal for {{ lead.client_name }} ({{ lead.business_name }})</strong>.
+              Enter the complete business agreement, revenue value, and billing details below.
+            </div>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-12 col-md-6">
+              <label class="form-label small fw-semibold">Final Deal Value (₹/$) <span class="text-danger">*</span></label>
+              {{ closure_form.deal_value }}
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label small fw-semibold">Closed Date</label>
+              {{ closure_form.closed_date }}
+            </div>
+
+            <div class="col-12">
+              <label class="form-label small fw-semibold">Products / Services Sold</label>
+              {{ closure_form.products_services_sold }}
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label small fw-semibold">Contract Period / Duration</label>
+              {{ closure_form.contract_period }}
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label small fw-semibold">Payment Terms</label>
+              {{ closure_form.payment_terms }}
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label small fw-semibold">Tax ID / GSTIN / VAT</label>
+              {{ closure_form.tax_id }}
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label small fw-semibold">Registered Billing Address</label>
+              {{ closure_form.billing_address }}
+            </div>
+
+            <div class="col-12">
+              <label class="form-label small fw-semibold">Closure Remarks & Handover Notes</label>
+              {{ closure_form.closure_notes }}
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success btn-sm fw-semibold">
+            <i class="bi bi-check2-circle me-1"></i> Successfully Close Deal & Save Details
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL 3: REASSIGN LEAD (Admin Only) -->
+<!-- ========================================================================= -->
+{% if is_admin %}
+<div class="modal fade" id="reassignModal" tabindex="-1" aria-labelledby="reassignModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-dark text-white">
+        <h5 class="modal-title fw-bold" id="reassignModalLabel">
+          <i class="bi bi-arrow-left-right me-2"></i>Reassign Lead
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" action="{% url 'reassign_lead' lead.pk %}">
+        {% csrf_token %}
+        <div class="modal-body p-4">
+          <p class="text-muted small">Select the salesperson who should handle follow-ups for this prospect:</p>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Assign To</label>
+            <select name="salesperson_id" class="form-select">
+              <option value="">-- Unassigned (Lead Pool) --</option>
+              {% for sp in salespeople %}
+                <option value="{{ sp.id }}" {% if lead.assigned_to_id == sp.id %}selected{% endif %}>
+                  {{ sp.get_full_name|default:sp.username }} ({{ sp.profile.get_role_display }})
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-dark btn-sm fw-semibold">Update Assignment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
