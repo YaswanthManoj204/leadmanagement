@@ -1,0 +1,28 @@
+cat > .gitignore <<'EOF'
+# Python
+*.pyc
+__pycache__/
+*.pyo
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Django database
+*.sqlite3
+
+# Environment variables
+.env
+.env.*
+
+# Keep example environment file
+!.env.example
+
+# Static and media
+staticfiles/
+media/
+
+# macOS
+.DS_Store
+EOF

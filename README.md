@@ -81,7 +81,7 @@ Each lead contains:
 - Django 5.x
 
 ### 2. Run Migrations & Seed Sample Data
-The database comes pre-configured with SQLite. Run:
+The database is configured with **SQLite** out of the box (zero server setup needed):
 
 ```bash
 # Apply migrations
@@ -89,6 +89,9 @@ python3 manage.py migrate
 
 # Seed realistic demo database (Admin + 3 Sales Reps + 8 Real-world Leads + Follow-ups)
 python3 demo_seed.py
+
+# Start development server
+python3 manage.py runserver
 ```
 
 ### 3. Start Development Server

@@ -4,8 +4,13 @@ Django settings for lead_manager project.
 
 from pathlib import Path
 import os
+from dotenv import load_dotenv
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load environment variables from .env file
+load_dotenv(BASE_DIR / '.env')
 
 SECRET_KEY = 'django-insecure-h&jxnf-r9f$@qwg!cq$t2wpv14-g#i$k6eg4sn&_!!$dfz!@ka'
 
@@ -55,6 +60,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'lead_manager.wsgi.application'
 
+# Database
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
